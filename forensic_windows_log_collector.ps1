@@ -1,7 +1,7 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-    Forensic Log Collection & Parsing Script — Windows
+    Forensic Log Collection & Parsing Script - Windows
 .DESCRIPTION
     Collects and parses ALL Windows logs from system installation date to present.
     Covers: System, Security, Application, PowerShell, RDP, Task Scheduler,
@@ -24,7 +24,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "SilentlyContinue"
 $ProgressPreference    = "SilentlyContinue"
 
-# ─── SETUP ──────────────────────────────────────────────────────────────────
+# --- SETUP ------------------------------------------------------------------
 $Timestamp   = Get-Date -Format "yyyyMMdd_HHmmss"
 $HostName    = $env:COMPUTERNAME
 $CsvDir      = Join-Path $OutputPath "CSV"
@@ -37,22 +37,22 @@ foreach ($dir in @($OutputPath, $CsvDir, $RawDir)) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
 }
 
-# ─── HELPERS ────────────────────────────────────────────────────────────────
+# --- HELPERS ----------------------------------------------------------------
 function Write-Banner {
     Write-Host ""
-    Write-Host " ╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host " ║   FORENSIC WINDOWS LOG COLLECTOR v2.0                     ║" -ForegroundColor Cyan
-    Write-Host " ║   Vairav Technology Security Pvt. Ltd.                    ║" -ForegroundColor Cyan
-    Write-Host " ║   Full-spectrum log acquisition — install date to now     ║" -ForegroundColor Cyan
-    Write-Host " ╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host " +===========================================================+" -ForegroundColor Cyan
+    Write-Host " |   FORENSIC WINDOWS LOG COLLECTOR v2.0                     |" -ForegroundColor Cyan
+    Write-Host " |   Vairav Technology Security Pvt. Ltd.                    |" -ForegroundColor Cyan
+    Write-Host " |   Full-spectrum log acquisition - install date to now     |" -ForegroundColor Cyan
+    Write-Host " +===========================================================+" -ForegroundColor Cyan
     Write-Host ""
 }
 
 function Write-Section {
     param([string]$Title)
-    Write-Host "`n══════════════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "`n======================================================" -ForegroundColor Cyan
     Write-Host "  $Title" -ForegroundColor Yellow
-    Write-Host "══════════════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "======================================================" -ForegroundColor Cyan
     Add-Content -Path $ReportFile -Value "`n################################################################################"
     Add-Content -Path $ReportFile -Value "## $Title"
     Add-Content -Path $ReportFile -Value "## $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')"
@@ -100,7 +100,7 @@ function Export-Events {
                 $line = ($_.PSObject.Properties | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join " | "
                 Add-Content -Path $ReportFile -Value "  $line"
             }
-            Write-Log "  → $($parsed.Count) events parsed → $CsvFileName"
+            Write-Log "  -> $($parsed.Count) events parsed -> $CsvFileName"
         }
     }
     catch {
@@ -113,7 +113,7 @@ function Format-EventXml {
     try { [xml]$Event.ToXml() } catch { $null }
 }
 
-# ─── 1. SYSTEM INSTALLATION DATE ────────────────────────────────────────────
+# --- 1. SYSTEM INSTALLATION DATE --------------------------------------------
 function Get-InstallDate {
     Write-Section "1. SYSTEM INSTALLATION DATE"
     Write-Log "Detecting install date"
@@ -154,7 +154,7 @@ function Get-InstallDate {
     Write-Log "Install date detected: $installDateTime"
 }
 
-# ─── 2. SECURITY LOGS ───────────────────────────────────────────────────────
+# --- 2. SECURITY LOGS -------------------------------------------------------
 function Get-SecurityLogs {
     Write-Section "2. SECURITY EVENT LOGS"
 
@@ -263,7 +263,7 @@ function Get-SecurityLogs {
         }
     }
 
-    # Object Access (4663 — file, reg access)
+    # Object Access (4663 - file, reg access)
     Export-Events -LogName "Security" -EventIds @(4663) -CsvFileName "02f_object_access.csv" `
         -SectionTitle "Object Access Events (4663)" -ParseBlock {
         param($e)
@@ -320,7 +320,7 @@ function Get-SecurityLogs {
     }
 }
 
-# ─── 3. SYSTEM LOGS ─────────────────────────────────────────────────────────
+# --- 3. SYSTEM LOGS ---------------------------------------------------------
 function Get-SystemLogs {
     Write-Section "3. SYSTEM EVENT LOGS"
 
@@ -387,7 +387,7 @@ function Get-SystemLogs {
     }
 }
 
-# ─── 4. APPLICATION LOGS ────────────────────────────────────────────────────
+# --- 4. APPLICATION LOGS ----------------------------------------------------
 function Get-ApplicationLogs {
     Write-Section "4. APPLICATION EVENT LOGS"
 
@@ -419,7 +419,7 @@ function Get-ApplicationLogs {
     }
 }
 
-# ─── 5. POWERSHELL & SCRIPT LOGS ────────────────────────────────────────────
+# --- 5. POWERSHELL & SCRIPT LOGS --------------------------------------------
 function Get-PowerShellLogs {
     Write-Section "5. POWERSHELL EXECUTION LOGS"
 
@@ -453,7 +453,7 @@ function Get-PowerShellLogs {
     }
 }
 
-# ─── 6. TASK SCHEDULER LOGS ─────────────────────────────────────────────────
+# --- 6. TASK SCHEDULER LOGS -------------------------------------------------
 function Get-TaskSchedulerLogs {
     Write-Section "6. TASK SCHEDULER LOGS"
 
@@ -485,11 +485,14 @@ function Get-TaskSchedulerLogs {
         @{N="Triggers";E={($_.Triggers | ForEach-Object { $_.CimClass.CimClassName }) -join "; "}}
     if ($tasks) {
         $tasks | Export-Csv (Join-Path $CsvDir "06b_scheduled_tasks_current.csv") -NoTypeInformation -Encoding UTF8
-        $tasks | ForEach-Object { Add-Content -Path $ReportFile -Value "  [$($_.State)] $($_.TaskPath)$($_.TaskName) | $($_.Actions)" }
+        $tasks | ForEach-Object {
+            $taskLine = "  [$($_.State)] $($_.TaskPath)$($_.TaskName) -- $($_.Actions)"
+            Add-Content -Path $ReportFile -Value $taskLine
+        }
     }
 }
 
-# ─── 7. NETWORK LOGS ────────────────────────────────────────────────────────
+# --- 7. NETWORK LOGS --------------------------------------------------------
 function Get-NetworkLogs {
     Write-Section "7. NETWORK LOGS"
 
@@ -529,7 +532,10 @@ function Get-NetworkLogs {
     $adapters = Get-NetAdapter | Select-Object Name, InterfaceDescription, MacAddress, Status, LinkSpeed, MediaType
     $adapters | Export-Csv (Join-Path $CsvDir "07c_network_adapters.csv") -NoTypeInformation -Encoding UTF8
     Add-Content -Path $ReportFile -Value "`n[Network Adapters]"
-    $adapters | ForEach-Object { Add-Content -Path $ReportFile -Value "  [$($_.Status)] $($_.Name) | MAC=$($_.MacAddress) | $($_.InterfaceDescription)" }
+    $adapters | ForEach-Object {
+        $adapterLine = "  [$($_.Status)] $($_.Name) -- MAC=$($_.MacAddress) -- $($_.InterfaceDescription)"
+        Add-Content -Path $ReportFile -Value $adapterLine
+    }
 
     # IP config
     $ipconfig = Get-NetIPAddress | Where-Object { $_.AddressFamily -in @("IPv4","IPv6") } | `
@@ -563,7 +569,7 @@ function Get-NetworkLogs {
     }
 }
 
-# ─── 8. RDP / REMOTE ACCESS LOGS ────────────────────────────────────────────
+# --- 8. RDP / REMOTE ACCESS LOGS --------------------------------------------
 function Get-RDPLogs {
     Write-Section "8. RDP & REMOTE ACCESS LOGS"
 
@@ -600,7 +606,7 @@ function Get-RDPLogs {
     }
 }
 
-# ─── 9. WINDOWS DEFENDER / AV LOGS ──────────────────────────────────────────
+# --- 9. WINDOWS DEFENDER / AV LOGS ------------------------------------------
 function Get-DefenderLogs {
     Write-Section "9. WINDOWS DEFENDER / ANTIMALWARE LOGS"
 
@@ -626,7 +632,7 @@ function Get-DefenderLogs {
     }
 }
 
-# ─── 10. WMI & AppLocker/SRP ────────────────────────────────────────────────
+# --- 10. WMI & AppLocker/SRP ------------------------------------------------
 function Get-WMIAndAppLockerLogs {
     Write-Section "10. WMI ACTIVITY & APPLOCKER LOGS"
 
@@ -662,7 +668,7 @@ function Get-WMIAndAppLockerLogs {
     }
 }
 
-# ─── 11. USB & DEVICE LOGS ──────────────────────────────────────────────────
+# --- 11. USB & DEVICE LOGS --------------------------------------------------
 function Get-USBLogs {
     Write-Section "11. USB & REMOVABLE DEVICE LOGS"
 
@@ -680,7 +686,7 @@ function Get-USBLogs {
 
     # USB from registry (historical device list)
     Write-Log "Reading USB device history from registry"
-    Add-Content -Path $ReportFile -Value "`n[Historical USB Devices — Registry]"
+    Add-Content -Path $ReportFile -Value "`n[Historical USB Devices - Registry]"
     try {
         $usbKey = "HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR"
         if (Test-Path $usbKey) {
@@ -694,14 +700,17 @@ function Get-USBLogs {
                 }
             }
             $usbDevices | Export-Csv (Join-Path $CsvDir "11b_usb_registry.csv") -NoTypeInformation -Encoding UTF8
-            $usbDevices | ForEach-Object { Add-Content -Path $ReportFile -Value "  [$($_.Class)] $($_.FriendlyName) | $($_.DeviceKey)" }
+            $usbDevices | ForEach-Object {
+                $usbLine = "  [$($_.Class)] $($_.FriendlyName) -- $($_.DeviceKey)"
+                Add-Content -Path $ReportFile -Value $usbLine
+            }
         }
     } catch {
         Add-Content -Path $ReportFile -Value "  [Access denied or key not found]"
     }
 }
 
-# ─── 12. USER & LOCAL ACCOUNTS ──────────────────────────────────────────────
+# --- 12. USER & LOCAL ACCOUNTS ----------------------------------------------
 function Get-UserAccountInfo {
     Write-Section "12. LOCAL USERS, GROUPS & ACCOUNT POLICY"
 
@@ -761,7 +770,7 @@ function Get-UserAccountInfo {
     }
 }
 
-# ─── 13. PROCESS & SERVICE SNAPSHOT ─────────────────────────────────────────
+# --- 13. PROCESS & SERVICE SNAPSHOT -----------------------------------------
 function Get-ProcessServiceSnapshot {
     Write-Section "13. RUNNING PROCESSES & SERVICES"
 
@@ -797,7 +806,7 @@ function Get-ProcessServiceSnapshot {
     }
 }
 
-# ─── 14. INSTALLED SOFTWARE ─────────────────────────────────────────────────
+# --- 14. INSTALLED SOFTWARE -------------------------------------------------
 function Get-InstalledSoftware {
     Write-Section "14. INSTALLED SOFTWARE"
 
@@ -822,7 +831,7 @@ function Get-InstalledSoftware {
     }
 }
 
-# ─── SUMMARY REPORT ─────────────────────────────────────────────────────────
+# --- SUMMARY REPORT ---------------------------------------------------------
 function Write-Summary {
     Write-Section "COLLECTION SUMMARY"
 
@@ -866,8 +875,71 @@ $($csvFiles | ForEach-Object { "  $($_.Name) ($($_.Length / 1KB -as [int]) KB)" 
     Add-Content -Path $ReportFile -Value $summary
 }
 
-# ─── MAIN ───────────────────────────────────────────────────────────────────
+# --- DISCLAIMER -------------------------------------------------------------
+function Show-Disclaimer {
+    $border = "=" * 76
+    Write-Host ""
+    Write-Host $border -ForegroundColor Red
+    Write-Host "  (!)  LEGAL DISCLAIMER - READ BEFORE PROCEEDING  (!)" -ForegroundColor Red
+    Write-Host $border -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  This tool is intended EXCLUSIVELY for:" -ForegroundColor Yellow
+    Write-Host "    ? Authorized forensic investigations" -ForegroundColor White
+    Write-Host "    ? Incident response on systems you OWN or have WRITTEN authorization" -ForegroundColor White
+    Write-Host "      to analyze" -ForegroundColor White
+    Write-Host "    ? Security audits with documented written authorization" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  UNAUTHORIZED USE is a criminal offense under:" -ForegroundColor Yellow
+    Write-Host "    ? Nepal Cyber Security Act 2082 (B.S.)" -ForegroundColor White
+    Write-Host "    ? Electronic Transactions Act 2063 (Nepal)" -ForegroundColor White
+    Write-Host "    ? Computer Fraud and Abuse Act - CFAA (United States)" -ForegroundColor White
+    Write-Host "    ? Computer Misuse Act 1990 (United Kingdom)" -ForegroundColor White
+    Write-Host "    ? Equivalent cybercrime statutes in your jurisdiction" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  By proceeding, you CONFIRM that:" -ForegroundColor Yellow
+    Write-Host "    [1] You have explicit WRITTEN authorization to collect logs from this system" -ForegroundColor White
+    Write-Host "    [2] Collected evidence will be handled per your organization's procedures" -ForegroundColor White
+    Write-Host "    [3] You accept FULL legal responsibility for this collection activity" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Vairav Technology Security Pvt. Ltd. accepts NO liability for" -ForegroundColor DarkGray
+    Write-Host "  unauthorized or improper use of this tool." -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host $border -ForegroundColor Red
+    Write-Host ""
+    Write-Host ("  Target Host : {0} ({1})" -f $env:COMPUTERNAME,
+        ((Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+          Where-Object { $_.IPAddress -notmatch "^127\." } | Select-Object -First 1).IPAddress)) -ForegroundColor Cyan
+    Write-Host ("  Run By      : {0}\{1} at {2} UTC" -f $env:USERDOMAIN, $env:USERNAME,
+        (Get-Date -Format "yyyy-MM-dd HH:mm:ss")) -ForegroundColor Cyan
+    Write-Host ""
+
+    $confirm = Read-Host "  Do you have written authorization to collect logs from this system? [yes/NO]"
+    if ($confirm.Trim().ToLower() -ne "yes") {
+        Write-Host ""
+        Write-Host "[ABORTED] Authorization not confirmed. No data collected. Exiting." -ForegroundColor Red
+        Write-Host ""
+        exit 1
+    }
+
+    Write-Host ""
+    Write-Host "[[OK]] Authorization confirmed. Recording analyst acceptance..." -ForegroundColor Green
+    Write-Host ""
+
+    # Return acceptance record object - written to disk after output dir is created
+    return [PSCustomObject]@{
+        AcceptedBy   = "$env:USERDOMAIN\$env:USERNAME"
+        AcceptedAt   = (Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        Host         = $env:COMPUTERNAME
+        HostIP       = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                        Where-Object { $_.IPAddress -notmatch "^127\." } | Select-Object -First 1).IPAddress
+        Script       = "forensic_windows_log_collector.ps1 v2.0"
+        Purpose      = "Forensic log collection - authorized use only"
+    }
+}
+
+# --- MAIN -------------------------------------------------------------------
 Write-Banner
+$DisclaimerRecord = Show-Disclaimer
 
 # Check admin
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -876,10 +948,22 @@ if (-not $isAdmin) {
     Write-Log "Re-run: Start-Process PowerShell -Verb RunAs" "WARN"
 }
 
+# Write disclaimer acceptance record to output directory
+$disclaimerFile = Join-Path $OutputPath "DISCLAIMER_ACCEPTANCE.txt"
+@"
+DISCLAIMER ACCEPTANCE RECORD
+=============================
+Accepted By : $($DisclaimerRecord.AcceptedBy)
+Accepted At : $($DisclaimerRecord.AcceptedAt)
+Host        : $($DisclaimerRecord.Host) ($($DisclaimerRecord.HostIP))
+Script      : $($DisclaimerRecord.Script)
+Purpose     : $($DisclaimerRecord.Purpose)
+"@ | Set-Content -Path $disclaimerFile -Encoding UTF8
+
 # Write report header
 Set-Content -Path $ReportFile -Value @"
 ================================================================================
-  FORENSIC LOG COLLECTION REPORT — WINDOWS
+  FORENSIC LOG COLLECTION REPORT - WINDOWS
   Host         : $HostName
   Collected By : forensic_windows_log_collector.ps1 v2.0
   Collection   : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')
