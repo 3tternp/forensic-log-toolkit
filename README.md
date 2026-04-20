@@ -34,10 +34,10 @@ This toolkit provides two forensic log collection scripts one for Linux (Bash) a
 
 The primary use cases are:
 
-- **Incident Response** — rapid acquisition of all relevant evidence from a potentially compromised host
-- **Forensic Investigation** — building a complete timeline of system activity from first boot
-- **Threat Hunting** — structured CSV outputs suitable for ingestion into SIEM platforms (Trident, Splunk, ELK, Sentinel)
-- **Compliance Auditing** — documented evidence collection with chain-of-custody hashing
+- **Incident Response**  rapid acquisition of all relevant evidence from a potentially compromised host
+- **Forensic Investigation**  building a complete timeline of system activity from first boot
+- **Threat Hunting** structured CSV outputs suitable for ingestion into SIEM platforms (Trident, Splunk, ELK, Sentinel)
+- **Compliance Auditing** documented evidence collection with chain-of-custody hashing
 
 Both scripts are designed to be run without any external dependencies beyond what ships with the OS. No third-party tools, no Python packages, no pip installs required.
 
@@ -206,7 +206,7 @@ ForensicLogs_<hostname>_<timestamp>/
 
 ---
 
-## Log Coverage — Linux
+## Log Coverage Linux
 
 ### Section 1: System Installation Date
 Detects the OS installation timestamp using multiple methods in priority order: filesystem root inode birth time, dpkg log first entry, oldest RPM transaction timestamp, `/lost+found` ctime, and oldest entry in `/var/log`. Also collects OS version, kernel version, architecture, and current uptime.
