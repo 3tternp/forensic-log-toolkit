@@ -425,10 +425,9 @@ Windows Event Log retention is controlled by the log's `MaxSize` policy. If logs
 
 All CSV outputs use consistent timestamp formats (`yyyy-MM-dd HH:mm:ss` for Windows, ISO-8601 for Linux) suitable for direct ingestion into:
 
-- **Trident SIEM** — ingest via the CSV import pipeline or watch-folder connector
-- **Splunk** — use `inputs.conf` with `sourcetype = csv` or the `| inputcsv` command
-- **Elastic/ELK** — use Filebeat with the CSV input module
-- **Microsoft Sentinel** — ingest via Logic App or the Custom Logs API
+- **Splunk**  use `inputs.conf` with `sourcetype = csv` or the `| inputcsv` command
+- **Elastic/ELK** use Filebeat with the CSV input module
+- **Microsoft Sentinel** ingest via Logic App or the Custom Logs API
 
 ### Performance Impact
 
