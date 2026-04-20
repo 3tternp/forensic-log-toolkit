@@ -1,11 +1,10 @@
 # 🔍 Forensic Log Collection Toolkit
 
-> **Full-spectrum log acquisition and parsing for Linux and Windows — installation date to present**
+> **Full-spectrum log acquisition and parsing for Linux and Windows installation date to present**
 
 | | |
 |---|---|
 | **Author** | Prem Basnet (Astra) |
-| **Organization** | Vairav Technology Security Pvt. Ltd. |
 | **Version** | 2.0 |
 | **License** | Internal / Forensic Use |
 | **Platforms** | Linux (Bash) · Windows (PowerShell 5.1+) |
@@ -19,8 +18,8 @@
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Output Structure](#output-structure)
-- [Log Coverage — Linux](#log-coverage--linux)
-- [Log Coverage — Windows](#log-coverage--windows)
+- [Log Coverage Linux](#log-coverage--linux)
+- [Log Coverage Windows](#log-coverage--windows)
 - [CSV Output Reference](#csv-output-reference)
 - [Chain of Custody](#chain-of-custody)
 - [Operational Notes](#operational-notes)
@@ -31,7 +30,7 @@
 
 ## Overview
 
-This toolkit provides two forensic log collection scripts — one for Linux (Bash) and one for Windows (PowerShell) — designed to acquire, parse, and structure all available system logs from the date of OS installation through to the moment of collection. Raw logs are never dumped directly; every log source is normalized into structured, analysis-ready output.
+This toolkit provides two forensic log collection scripts one for Linux (Bash) and one for Windows (PowerShell) designed to acquire, parse, and structure all available system logs from the date of OS installation through to the moment of collection. Raw logs are never dumped directly; every log source is normalized into structured, analysis-ready output.
 
 The primary use cases are:
 
@@ -66,7 +65,7 @@ forensic-log-toolkit/
 | `awk`, `grep`, `find`, `stat`, `ss` | Standard on all distributions |
 | `journalctl` | Required for systemd journal (optional — falls back gracefully) |
 | `last`, `lastb` | Required for login history (`util-linux` package) |
-| `ausearch` | Optional — used as fallback if auditd is installed |
+| `ausearch` | Optional  used as fallback if auditd is installed |
 
 > Running without root will still collect a significant amount of data but will skip `/var/log/auth.log`, `/var/log/audit/audit.log`, `btmp` (failed login history), and some `/proc` entries.
 
@@ -209,10 +208,10 @@ ForensicLogs_<hostname>_<timestamp>/
 
 ## Log Coverage — Linux
 
-### Section 1 — System Installation Date
+### Section 1: System Installation Date
 Detects the OS installation timestamp using multiple methods in priority order: filesystem root inode birth time, dpkg log first entry, oldest RPM transaction timestamp, `/lost+found` ctime, and oldest entry in `/var/log`. Also collects OS version, kernel version, architecture, and current uptime.
 
-### Section 2 — Authentication & Login Logs
+### Section 2: Authentication & Login Logs
 Sources: `/var/log/auth.log` (Debian/Ubuntu), `/var/log/secure` (RHEL/CentOS)
 
 Parses and structures:
@@ -221,49 +220,49 @@ Parses and structures:
 - SSH accepted and rejected connections with key method and source IP
 - Every `sudo` command invocation with user, target user, TTY, and full command
 
-### Section 3 — System / Kernel Logs
+### Section 3: System / Kernel Logs
 Sources: `dmesg`, `journalctl`
 
 Captures kernel ring buffer events filtered for errors, warnings, OOM kills, hardware faults, segfaults, and call traces. SystemD journal is queried for error-and-above severity events across all units. Service start/stop/fail events are extracted and tagged.
 
-### Section 4 — Security Logs
+### Section 4: Security Logs
 Sources: filesystem (`find`), `/var/log/ufw.log`, `/var/log/audit/audit.log`, crontab files
 
 Enumerates all SUID/SGID binaries system-wide, all world-writable files (excluding `/proc`, `/sys`, `/dev`, `/run`), all cron jobs across system and user crontabs, and all UFW/iptables block events parsed into structured fields (protocol, source IP/port, destination IP/port, interface). AppArmor and SELinux denial events are extracted separately.
 
-### Section 5 — Application Logs
+### Section 5: Application Logs
 Sources: Apache/Nginx access and error logs, MySQL/PostgreSQL logs, dpkg/rpm history
 
 Web access logs are parsed into IP, method, URI, status code, and user agent fields. Suspicious patterns (path traversal, SQL injection attempts, XSS) are flagged inline. Package installation history is normalized to timestamp, action, package name, and version.
 
-### Section 6 — Network & Access Logs
+### Section 6: Network & Access Logs
 Sources: `ss`, `ip`, `arp`, `/etc/resolv.conf`, `/etc/hosts`, syslog
 
 Captures all active TCP/UDP connections with process name and PID, all listening ports, the ARP neighbor cache, DNS resolver configuration, and the hosts file. Network-related syslog events (DHCP, DNS, NetworkManager) are also extracted.
 
-### Section 7 — Audit Logs (auditd)
+### Section 7: Audit Logs (auditd)
 Sources: `/var/log/audit/audit.log`, `ausearch`
 
 Parses SYSCALL, PATH, and EXECVE audit records into structured fields (timestamp, UID, PID, executable, key, result). USER_LOGIN, USER_LOGOUT, and USER_AUTH events are extracted separately for logon timeline reconstruction.
 
-### Section 8 — File Integrity & Suspicious Activity
+### Section 8: File Integrity & Suspicious Activity
 Sources: filesystem (`find`, `stat`), `/etc/passwd`, `/etc/shadow`, `~/.bash_history`
 
 Identifies files modified in the last 7 days within key directories (`/etc`, `/bin`, `/sbin`, `/usr/bin`, `/tmp`), hidden files in sensitive locations, executables in world-writable temp directories, all accounts with UID 0, accounts with empty passwords, and command history for all user accounts.
 
-### Section 9 — Running Processes & Scheduled Tasks
+### Section 9: Running Processes & Scheduled Tasks
 Sources: `ps`, `systemctl`, `atq`
 
 Full process tree with parent/child relationships, CPU/memory stats, and start times. All active systemd timers and AT job queue entries are captured.
 
-### Section 10 — Login Records (wtmp/btmp/utmp)
+### Section 10: Login Records (wtmp/btmp/utmp)
 Sources: `last -F -w`, `lastb -F`, `w`, `last reboot`, `last shutdown`
 
 Complete login history from wtmp (all historical sessions), failed login history from btmp, currently logged-in users from utmp, and full reboot/shutdown history.
 
 ---
 
-## Log Coverage — Windows
+## Log Coverage: Windows
 
 ### Security Event Log
 
@@ -316,7 +315,7 @@ Complete login history from wtmp (all historical sessions), failed login history
 
 All CSV files use UTF-8 encoding with headers in the first row. They are designed to be imported directly into Excel, pandas, or any SIEM platform.
 
-### Key CSV Fields — Linux
+### Key CSV Fields Linux
 
 **`auth_failed_logins.csv`**
 ```
@@ -509,5 +508,4 @@ All evidence collected using these scripts should be handled in accordance with 
 
 ---
 
-*Vairav Technology Security Pvt. Ltd. — CSOC & SIEM Division*
-*Maintained by: Prem Basnet (Astra) | GitHub: [3tternp](https://github.com/3tternp)*
+*Maintained by: 3tternp (Astra) | GitHub: [3tternp](https://github.com/3tternp)*
